@@ -42,6 +42,26 @@
 <!-- Your community, and what your classifier sorts posts into. Three or four
      sentences. -->
 
+TakeMeter sorts comments from **r/soccer**, Reddit's main football
+discussion community, by what kind of contribution they make. The comments
+come from a public snapshot of r/soccer threads (late 2022 to early 2023:
+post-match threads, stats posts, news, quotes and discussion).
+
+**What I noticed reading 40 comments before designing anything:**
+
+1. Some comments point at something you could check — a minute, a
+   substitution, a stat, a result ("Rashford did more in 5mins than any other
+   England player…"). Most don't.
+2. A large share make no claim at all — they're jokes, sarcasm, or pure
+   feeling ("I am going to get fucking wasted", "At least Suarez didn't start
+   biting people…").
+3. Some deliver a confident verdict with nothing behind it ("Platini and
+   sarkozy both belong in jail with blatter", "Faes is very decent at
+   football").
+4. A noticeable minority aren't about football at all (concert trips,
+   geopolitics in a news thread). These are out of scope and were not
+   collected.
+
 
 
 ---
