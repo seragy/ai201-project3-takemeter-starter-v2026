@@ -44,8 +44,12 @@
 
 TakeMeter sorts comments from **r/soccer**, Reddit's main football
 discussion community, by what kind of contribution they make. The comments
-come from a public snapshot of r/soccer threads (late 2022 to early 2023:
-post-match threads, stats posts, news, quotes and discussion).
+come from a public snapshot of r/soccer threads (roughly 2016 to 2023:
+post-match threads, goal clips, stats posts, news, quotes and discussion).
+Each comment is sorted into one of three labels: `analysis` (a point backed
+by something checkable), `take` (a sincere opinion with nothing checkable
+behind it), or `reaction` (a joke, feeling or question that isn't arguing
+anything).
 
 **What I noticed reading 40 comments before designing anything:**
 
@@ -74,33 +78,101 @@ post-match threads, stats posts, news, quotes and discussion).
      The decision rule is worth a point on its own and it's the thing most
      people leave out. Every taxonomy has a hardest boundary. Name yours. -->
 
-### `label_one`
+Every comment gets exactly one label. Ask two questions, in this order:
 
-**Definition:**
+1. **Is it mainly a joke, sarcasm, a feeling, or a question?** → `reaction`,
+   even if it happens to contain a fact.
+2. **Otherwise, does its point rest on a specific, checkable detail?** →
+   `analysis`. If not → `take`.
+
+### `analysis`
+
+**Definition:** Makes a point about football that rests on at least one
+specific, checkable detail — a number, date, scoreline, record, quote,
+transfer fee, or a concrete moment in a match.
 
 **Example 1:**
->
+> I'm not so sure. He hasn't played most of those in the last few years.
+> Edit: He has played 4 friendlies in total since 2017, scoring 3 goals in
+> those games. Against Sweden (1 goal), Egypt (2 goals), the Netherlands, and
+> Algeria. On the other hand in the same time period he played 25 official
+> games scoring 30 goals in total.
 
 **Example 2:**
->
+> I mean, neither Pele nor Maradona have won the Balloon D'Or. Non-Europeans
+> weren't allowed to win it until 1995.
 
-### `label_two`
+### `take`
 
-**Definition:**
+**Definition:** A sincere opinion, verdict or prediction about football,
+offered without any specific, checkable detail behind it.
 
 **Example 1:**
->
+> The only reason he hasn't been contesting for the ballon d'Or is because of
+> injuries. When he's healthy he is literally unplayable and not a single
+> player in the world outside of Messi and Ronaldo can touch him in terms of
+> his contribution on the field
 
 **Example 2:**
->
+> When I think of great players from the last 10 or so years - obviously
+> Messi and Ronaldo will come to mind first. But I feel like the third most
+> enigmatic player has been Zlatan. Dude is an icon.
+
+### `reaction`
+
+**Definition:** A joke, sarcastic line, feeling or question that doesn't
+sincerely argue a point.
+
+**Example 1:**
+> #THEY'RE GOING HOME LADS
+
+**Example 2:**
+> Not to mention all the MLS Cups Messi will be winning 8 years from now
 
 ### The hardest boundary
 
-**Which two labels:**
+**Which two labels:** `take` vs `analysis`.
+
+**The borderline post that found it:**
+> On Par with Casillas vs Robben
+
+It names a real, checkable save — but the save is what the poster is
+comparing *to*, not evidence *for* the comparison.
 
 **The decision rule I used every time:**
-<!-- e.g. "If the post names a specific checkable fact, it's `analysis`, even
-     if the tone is heated." -->
+
+A detail only counts if someone could look it up or rewind to it: a number,
+date, scoreline, named match or minute, quote, fee, or a described on-pitch
+moment. **And it has to support the point, not just be its subject.**
+
+- Doesn't count: personal experience ("I've played CB for years"),
+  "everyone knows", hyperbole ("picked 9/10 times"), and whole-match
+  summaries ("Liverpool created nothing the entire game").
+- Tone never matters. A furious post with a checkable fact is `analysis`; a
+  calm, thoughtful post with none is `take`.
+
+**Second rule, `reaction` vs the other two:** if the main purpose is the
+joke, it's `reaction` — even when the joke is built out of true facts.
+
+### Stress test
+
+Before labelling, I had Claude write eight posts that sit on these
+boundaries, and classified each with the rules above:
+
+| # | Post | Label | What it tested |
+|---|---|---|---|
+| 1 | "Pochettino is a fraud. 0 trophies in 5 years at Spurs says it all." | `analysis` | Heated tone + checkable fact |
+| 2 | "Pochettino is a fraud and everyone who's watched Spurs knows it." | `take` | "Everyone knows" isn't support |
+| 3 | "Ah yes, Spurs, famous for their trophy cabinet 🏆" | `reaction` | Sarcasm with an implied claim |
+| 4 | "Haaland scored 36 league goals last season. 40 next year, easy." | `analysis` | Prediction backed by a number |
+| 5 | "I've played centre back 15 years and nobody defends that run. Not a foul." | `take` | Personal experience isn't checkable |
+| 6 | "Arsenal bottled it again, awful for 90 minutes." | `take` | Whole-match summary |
+| 7 | "Saliba stepped up at 63' and left Jesus offside — that's the whole goal." | `analysis` | Concrete match moment |
+| 8 | "Can't believe Messi is 36 and still doing this 😭" | `reaction` | Feeling that contains a fact |
+
+Posts 4 and 8 were the ones my first draft couldn't separate: both contain a
+number. That's what produced the **order** of the two questions (check for
+joke/feeling first) and the clause "it has to support the point".
 
 
 
