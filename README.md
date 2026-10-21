@@ -183,45 +183,98 @@ joke/feeling first) and the clause "it has to support the point".
 <!-- Where you collected from, how you labelled, your counts, and three hard
      cases. -->
 
-**Where the posts came from:**
+**Where the posts came from:** Public r/soccer comments, taken from the
+[`singhala/reddit_soccer`](https://huggingface.co/datasets/singhala/reddit_soccer)
+dataset on Hugging Face (BSD licence). It's a snapshot of 98,710 comments
+across 995 r/soccer threads, roughly 2016–2023. Reddit blocks scripted access
+from my machine, so I used this snapshot instead of scraping.
 
-**How I labelled them:** <!-- Cold first? Pre-labelled with AI and corrected?
-Say so plainly — the disclosure is required, not penalised. -->
+How I picked 303 out of 98,710:
+
+- **Removed:** deleted or removed comments, bot and mirror comments, anything
+  with a link, comments under 20 or over 600 characters, and exact duplicates.
+- **Kept threads:** post-match threads, goal clips, stats, news, quotes,
+  transfers and discussion.
+- **Drew a 380-comment pool from three buckets:** 150 comments containing a
+  number and over 80 characters, 110 long comments (over 200 characters) with
+  no number, and 120 short ones. A plain random sample would have been mostly
+  `reaction` with very little `analysis`. The two non-number buckets are there
+  so that "long" or "has a digit" doesn't become a stand-in for `analysis`.
+- **Dropped 18 off-topic comments** (hotel stories, basketball, a TV show,
+  geopolitics with no football in it).
+- **Randomly downsampled `reaction` from 169 to 110** to even out the labels.
+
+**How I labelled them:**
+
+- **20 rows were labelled cold**, by me, with no tools. They're at the top of
+  `labels.csv` and marked `cold` in the note column.
+- **The other 283 were pre-labelled by Claude** using the definitions and
+  decision rules above. Then I read and corrected every one of them. Rows I
+  checked say `pre-labelled, checked`, and corrections are noted in the note
+  column.
+
+<!-- TODO (Youssef): the sentence "I read and corrected every one" is only
+     true once you have. Until then the note column says "NOT YET CHECKED".
+     After you finish, update the counts table below — your cold labels and
+     corrections will change it. -->
+
+
 
 **Counts per label:**
 
 | Label | Count | Share |
 |---|---|---|
-|  |  |  |
-|  |  |  |
-|  |  |  |
-| **Total** |  | 100% |
+| `reaction` | 110 | 36% |
+| `analysis` | 98 | 32% |
+| `take` | 95 | 31% |
+| **Total** | 303 | 100% |
 
-**Three hard cases**
-
-<!-- Any post that made you pause: what it was, which two labels it could have
-     been, and what you chose. These are worth more than the easy 190. -->
+**Hard cases** (marked `hard:` in the note column)
 
 **1.**
-> *The post:*
+> *The post:* "Alexis Sanchez went from an underperforming club that gets
+> knocked out by European giants in the round of 16 to an underperforming club
+> that gets knocked out by European minnows in the round of 16"
 >
-> *Could have been:*
+> *Could have been:* `reaction` or `analysis`
 >
-> *I chose, because:*
+> *I chose, because:* `reaction`. Every part of it is true and checkable, but
+> it exists for the punchline. Rule 1 comes first: if the main purpose is the
+> joke, it's `reaction`.
 
 **2.**
-> *The post:*
+> *The post:* "clearly shows you don't watch us lmao. Man has been made out of
+> glass this season. He gets picked 9/10 times when he's available lol."
 >
-> *Could have been:*
+> *Could have been:* `analysis` or `take`
 >
-> *I chose, because:*
+> *I chose, because:* `take`. "9/10 times" looks like a stat, but it's a figure
+> of speech; nobody could look it up. Hyperbole doesn't count as a checkable
+> detail.
 
 **3.**
-> *The post:*
+> *The post:* "Watford really were fantastic. Wasn't some flukey win, they
+> were properly dominating in terms of chance creation and defended superbly.
+> Liverpool created nothing the entire game, while Watford could've easily
+> scored a couple more."
 >
-> *Could have been:*
+> *Could have been:* `analysis` or `take`
 >
-> *I chose, because:*
+> *I chose, because:* `take`. It's about one specific match, which makes it
+> feel like analysis. But it never names a moment, a minute or a number, only
+> a summary of 90 minutes. Whole-match summaries don't count.
+
+**4.**
+> *The post:* "I just knew it that Italy was going to win after this. The
+> vibes in both camps and their captains was totally different. Add to that
+> Luis Enrique's comments about how he doesn't get involved in selecting
+> penalty takers"
+>
+> *Could have been:* `take` or `analysis`
+>
+> *I chose, because:* `analysis`, narrowly. Most of it is vibes, but the last
+> line points at a real, checkable quote that supports the prediction. One
+> checkable detail that supports the point is enough.
 
 ---
 
@@ -229,11 +282,17 @@ Say so plainly — the disclosure is required, not penalised. -->
 
 <!-- Your starting model, your settings, and anything you changed and why. -->
 
-**Base model:**
+**Base model:** `distilbert-base-uncased`
 
-**Settings:** <!-- epochs, learning rate, batch size, seed -->
+**Device:** `mps` (Apple Silicon GPU), torch 2.14.1. Recorded in
+`results.json` too.
 
-**Anything I changed from the defaults, and why:**
+**Settings:** 3 epochs, learning rate 2e-5, batch size 16, max length 128
+tokens, seed 42.
+
+**Anything I changed from the defaults, and why:** Nothing. Comments were
+capped at 600 characters during collection, which is well under 128 tokens
+for almost all of them, so the default length doesn't cut much off.
 
 **Split sizes:** <!-- train / val / test, and per-label counts in the test
 split. If a label had fewer than about 8 in test, say so — it explains a lot
@@ -264,7 +323,28 @@ of next unit's variance. -->
 - *What came back:*
 - *What I changed:*
 
-**Pre-labelling disclosure:**
+**Pre-labelling disclosure:** Claude pre-labelled 283 of the 303 rows using
+the definitions and decision rules in this README. Each one was then read
+and corrected by hand. The 20 rows marked `cold` were labelled by me with no
+tools, before I looked at any pre-labels. Claude also picked the dataset,
+built the candidate pool, and wrote the eight stress-test posts.
+
+<!-- TODO (Youssef): Moments 1 and 2 are first-person — write them yourself.
+     A factual log of what Claude did in this session, to draw from:
+       - Reddit returned 403 to scripted requests, so Claude found the public
+         singhala/reddit_soccer snapshot on Hugging Face instead of scraping.
+       - Claude read 40 comments and proposed four distinctions (Milestone 1).
+       - Its first draft of the taxonomy had no category for plain factual
+         comments ("Napoli are the 4th different champion in 4 years"). Those
+         got folded into `analysis`. The third label was renamed `reaction`
+         so it would cover jokes, feelings and bare questions.
+       - Stress-test posts 4 and 8 both contained numbers but belonged to
+         different labels. That led to the ordered two-question rule.
+       - The pool was oversampled for comments with numbers and for long
+         comments, so `analysis` wouldn't be too thin. `reaction` was
+         downsampled from 169 to 110.
+     Good material: one place where you disagreed with a Claude pre-label,
+     and what the rule said. -->
 
 <!-- ═══════════════════════ UNIT 6 — THE TEST ═══════════════════════
 
