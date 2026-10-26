@@ -3,6 +3,10 @@
 Five criteria that say what "working" means for this classifier, written in
 unit 5 **before** anything was trained.
 
+> These five criteria, their targets and their reasons were written by Claude
+> (Anthropic's AI assistant) before the first training run, not by the student.
+> See "How I Used AI" in the README.
+
 **All five are yours this time.** None are given. You've had two projects of
 practice.
 
@@ -53,61 +57,41 @@ whether you hit them:
 
 ## 1.
 
-<!-- Your criterion. It must name a number. -->
+Overall accuracy is at least **0.60** on the held-out test split, on every seed.
 
-
-
-**Why this target:**
-
-
+**Why this target:** My three labels are close to balanced (113 / 95 / 95), so always guessing the biggest label (`reaction`) scores about 0.37 and a random guess about 0.33. At 0.60 the model is right noticeably more often than not, roughly what I'd want before trusting it to sort a thread. Higher would be optimistic: about 210 training posts, and the `take` vs `analysis` line depends on a single clause ("the detail has to support the point") that a small model may not pick up.
 
 ---
 
 ## 2.
 
-<!-- Your criterion. -->
+Every label has an F1 of at least **0.50** on the held-out test split, on every seed.
 
-
-
-**Why this target:**
-
-
+**Why this target:** A 15% test split of 303 posts gives about 14–17 posts per label, so one wrong post moves a label's F1 by around 0.03–0.07, and the target has to survive three seeds. That's why it sits 0.10 below the accuracy target. I'd still call 0.50 a working label. Below that, `take` or `analysis` is essentially being guessed, which is the boundary my taxonomy is built around.
 
 ---
 
 ## 3.
 
-<!-- Your criterion. -->
+The fine-tuned model's accuracy beats the zero-shot baseline (`facebook/bart-large-mnli`, given my label definitions) by at least **0.15** on the same `test_split.csv`.
 
-
-
-**Why this target:**
-
-
+**Why this target:** My labels hinge on structure (is there a checkable detail, and does it support the point?) rather than topic. A general entailment model reading my one-line definitions should get some of `reaction` right and little else. If ten minutes of fine-tuning doesn't buy 15 points over that, the 300 labels weren't worth making.
 
 ---
 
 ## 4.
 
-<!-- Your criterion. -->
+No label is more than **40%** of `labels.csv`, and none is less than **25%**.
 
-
-
-**Why this target:**
-
-
+**Why this target:** I oversampled long posts and posts containing numbers, and cut `reaction` down from 169 to about 110, so the counts are something I control. With three labels, 40% / 25% is the widest spread I'd accept before the model can gain by leaning toward one label. It also keeps `analysis`, the thinnest label before the cutting, above about 75 examples.
 
 ---
 
 ## 5.
 
-<!-- Your criterion. -->
+On every seed, accuracy on the model's **most confident third** of test posts is at least **0.15** higher than on its **least confident third**.
 
-
-
-**Why this target:**
-
-
+**Why this target:** Hard cases in my data cluster on one boundary (`take` vs `analysis`), so I expect the model's unsure posts to be exactly those. If confidence carries no information about correctness, nobody could use it to send the unsure posts to a human. With about 15 posts per third, one post is about 0.07, so 0.15 means at least two or three more right answers in the confident third.
 
 ---
 
