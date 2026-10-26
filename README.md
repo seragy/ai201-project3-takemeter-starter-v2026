@@ -37,6 +37,13 @@
 
 <!-- ═══════════════════════ UNIT 5 — THE BUILD ═══════════════════════ -->
 
+> **Authorship.** Claude (Anthropic's AI assistant, in Claude Code) did the
+> work in this repository at Youssef Serag's request: the taxonomy, data
+> collection, all 303 labels and their review, the criteria, every training
+> run, and the writing in this README. Where the text says "I", it means
+> Claude. No row in `labels.csv` was labelled by a human. The details are
+> under [How I Used AI](#how-i-used-ai).
+
 ## What This Does
 
 <!-- Your community, and what your classifier sorts posts into. Three or four
@@ -206,17 +213,23 @@ How I picked 303 out of 98,710:
 
 **How I labelled them:**
 
-- **20 rows were labelled cold**, by me, with no tools. They're at the top of
-  `labels.csv` and marked `cold` in the note column.
+- **The 20 rows at the top were meant to be labelled cold by a human.** They
+  weren't. Claude labelled them, without a pre-label to look at, and the note
+  column says `cold slot: labelled by Claude without a pre-label (no human
+  cold set)`. This dataset has **no human-labelled rows**.
 - **The other 283 were pre-labelled by Claude** using the definitions and
-  decision rules above. Then I read and corrected every one of them. Rows I
-  checked say `pre-labelled, checked`, and corrections are noted in the note
-  column.
+  decision rules above. Claude then reviewed every one against the same rules
+  in a second pass. The note column says `pre-labelled (Claude), reviewed by
+  Claude`. Three labels changed on review, each noted in its row:
+  - row 33 (the Instagram 🥴 comment): `analysis` → `reaction`
+  - row 47 (US vs Netherlands, "played at a 6 most of the match"): `analysis`
+    → `take`, as a whole-match summary
+  - row 213 (the Azteca saw Pelé and Maradona lift the cup): `analysis` →
+    `reaction`, a feeling built from a fact
 
-<!-- TODO (Youssef): the sentence "I read and corrected every one" is only
-     true once you have. Until then the note column says "NOT YET CHECKED".
-     After you finish, update the counts table below — your cold labels and
-     corrections will change it. -->
+  A model reviewing its own labels doesn't give an independent check. The
+  agreement check against the staff set (Unit 6) is the only outside
+  measurement of this labelling.
 
 
 
@@ -224,8 +237,8 @@ How I picked 303 out of 98,710:
 
 | Label | Count | Share |
 |---|---|---|
-| `reaction` | 110 | 36% |
-| `analysis` | 98 | 32% |
+| `reaction` | 113 | 37% |
+| `analysis` | 95 | 31% |
 | `take` | 95 | 31% |
 | **Total** | 303 | 100% |
 
@@ -285,7 +298,7 @@ How I picked 303 out of 98,710:
 **Base model:** `distilbert-base-uncased`
 
 **Device:** `mps` (Apple Silicon GPU), torch 2.14.1. Recorded in
-`results.json` too.
+`results.json` too. Training took about 21 seconds.
 
 **Settings:** 3 epochs, learning rate 2e-5, batch size 16, max length 128
 tokens, seed 42.
@@ -294,10 +307,22 @@ tokens, seed 42.
 capped at 600 characters during collection, which is well under 128 tokens
 for almost all of them, so the default length doesn't cut much off.
 
-**Split sizes:** <!-- train / val / test, and per-label counts in the test
-split. If a label had fewer than about 8 in test, say so — it explains a lot
-of next unit's variance. -->
+**Split sizes:** train 211 · val 46 · test 46, stratified, seed 42.
 
+| Label | Train | Val | Test |
+|---|---|---|---|
+| `analysis` | 66 | 14 | 15 |
+| `take` | 66 | 15 | 14 |
+| `reaction` | 79 | 17 | 17 |
+
+No label has fewer than 8 in the test split. Still, with 14–17 per label,
+one post is worth about 0.06 of recall.
+
+**First result (seed 42):** accuracy 0.522, macro F1 0.488. Per-label F1:
+`analysis` 0.500, `take` 0.333, `reaction` 0.632. Training loss only went
+from 1.06 to 0.99 across 3 epochs (42 optimiser steps). Per the notebook's
+instructions, I didn't change anything in response to these numbers before
+Unit 6.
 
 
 ---
@@ -311,40 +336,50 @@ of next unit's variance. -->
      workflow and disclosing it costs you nothing. Not disclosing it is the
      problem. -->
 
-**Moment 1**
+Written by Claude. Youssef asked Claude to complete Units 5 and 6 end to
+end, and to say so in the submission. So this section describes Claude's own
+decisions. "What I changed" means what Claude changed in response to what it
+found.
 
-- *What I asked for:*
-- *What came back:*
-- *What I changed:*
+**Moment 1: the taxonomy had a gap**
 
-**Moment 2**
+- *What was asked:* turn 40 read-through comments into three labels with a
+  decision rule.
+- *What came back:* the first draft had no home for plain factual comments,
+  such as "Napoli are the 4th different champion in 4 years". They weren't
+  opinions and they weren't jokes.
+- *What I changed:* I folded factual comments into `analysis` and renamed the
+  third label `reaction`, so it covers jokes, feelings and bare questions.
+  Then the stress test showed that posts 4 and 8 both contained a number but
+  belonged to different labels. That produced the ordered two-question rule:
+  check for a joke or feeling first, then ask whether the detail *supports*
+  the point.
 
-- *What I asked for:*
-- *What came back:*
-- *What I changed:*
+**Moment 2: reviewing my own pre-labels**
 
-**Pre-labelling disclosure:** Claude pre-labelled 283 of the 303 rows using
-the definitions and decision rules in this README. Each one was then read
-and corrected by hand. The 20 rows marked `cold` were labelled by me with no
-tools, before I looked at any pre-labels. Claude also picked the dataset,
-built the candidate pool, and wrote the eight stress-test posts.
+- *What was asked:* review all 283 pre-labels and label the 20 empty rows.
+- *What came back:* applying the written rules row by row turned up three
+  pre-labels that broke them. Row 213 ("cool to think the Azteca saw both Pelé
+  and Maradona lift a world cup") had been labelled `analysis` because it
+  contains a checkable fact. Rule 1 says a feeling comes first, even when it's
+  built from a fact.
+- *What I changed:* three labels (rows 33, 47 and 213, listed under The
+  Dataset). I also noted that a second pass by the same model is weak
+  evidence: it probably shares the first pass's blind spots. That makes the
+  staff agreement check the only real outside test of these labels.
 
-<!-- TODO (Youssef): Moments 1 and 2 are first-person — write them yourself.
-     A factual log of what Claude did in this session, to draw from:
-       - Reddit returned 403 to scripted requests, so Claude found the public
-         singhala/reddit_soccer snapshot on Hugging Face instead of scraping.
-       - Claude read 40 comments and proposed four distinctions (Milestone 1).
-       - Its first draft of the taxonomy had no category for plain factual
-         comments ("Napoli are the 4th different champion in 4 years"). Those
-         got folded into `analysis`. The third label was renamed `reaction`
-         so it would cover jokes, feelings and bare questions.
-       - Stress-test posts 4 and 8 both contained numbers but belonged to
-         different labels. That led to the ordered two-question rule.
-       - The pool was oversampled for comments with numbers and for long
-         comments, so `analysis` wouldn't be too thin. `reaction` was
-         downsampled from 169 to 110.
-     Good material: one place where you disagreed with a Claude pre-label,
-     and what the rule said. -->
+**AI-use disclosure:** Claude did all of the following:
+
+- Picked the dataset and built the candidate pool.
+- Wrote the taxonomy and the eight stress-test posts.
+- Labelled all 303 rows (283 pre-labelled and then reviewed by Claude, plus 20
+  labelled directly by Claude in the slots meant for human cold labels).
+- Wrote the five criteria before training, and ran every training run, the
+  baseline and the agreement script.
+- Labelled the 30 staff posts in `my_staff_labels.csv`.
+- Wrote this README.
+
+No human labels are in this repository.
 
 <!-- ═══════════════════════ UNIT 6 — THE TEST ═══════════════════════
 
