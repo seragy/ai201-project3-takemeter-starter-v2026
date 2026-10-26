@@ -368,6 +368,21 @@ found.
   evidence: it probably shares the first pass's blind spots. That makes the
   staff agreement check the only real outside test of these labels.
 
+**Unit 6: where a model found patterns in the errors.** Claude ran the
+baseline, the three-seed runs and the improvement, and wrote every verdict and
+diagnosis. Two of the findings came from Claude reading raw outputs rather
+than the summary tables:
+
+- **The baseline collapsed onto one label:** 37 of 46 posts were called
+  `analysis` with definitions, and 36 of 46 were called `take` without them.
+  Its `analysis` F1 of 0.500 was an artefact of that, not skill.
+- **Seed 7's `analysis` misses:** several of those posts open like reactions
+  ("Congrats to Napoli!", "You kidding me?"). That became the main point of
+  What's Still Broken.
+
+The confidence check (criterion 5) was one of the original five criteria from
+Unit 5. It was not added as a stretch goal.
+
 **AI-use disclosure:** Claude did all of the following:
 
 - Picked the dataset and built the candidate pool.
