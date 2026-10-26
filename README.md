@@ -456,29 +456,71 @@ boundary my taxonomy is built around, and the model hasn't learned it yet.
 <!-- Five criteria across three seeds. The notebook's section 6 prints the
      spread table; the Target and Verdict columns are yours. -->
 
+Defaults: 3 epochs, lr 2e-5, batch 16, max length 128, on `mps`.
+`results_three_seeds_before.json`.
+
 | Criterion | Target | Seed 42 | Seed 7 | Seed 2024 | Verdict |
 |---|---|---|---|---|---|
-| 1.  |  |  |  |  |  |
-| 2.  |  |  |  |  |  |
-| 3.  |  |  |  |  |  |
-| 4.  |  |  |  |  |  |
-| 5.  |  |  |  |  |  |
+| 1. Overall accuracy | ≥ 0.60 every seed | 0.522 | 0.565 | 0.609 | **MISSED** |
+| 2. Lowest per-label F1 | ≥ 0.50 every seed | 0.333 (`take`) | 0.381 (`analysis`) | 0.364 (`take`) | **MISSED** |
+| 3. Accuracy gain over zero-shot baseline (same split) | ≥ +0.15 every seed | +0.174 (0.522 vs 0.348) | +0.217 (0.565 vs 0.348) | +0.239 (0.609 vs 0.370) | **MET** |
+| 4. Label shares in `labels.csv` | every label 25–40% | 37 / 31 / 31% | same file | same file | **MET** |
+| 5. Accuracy, most-confident third minus least-confident third | ≥ +0.15 every seed | +0.467 (0.800 vs 0.333) | +0.467 (0.800 vs 0.333) | +0.533 (0.867 vs 0.333) | **MET** |
+
+The notebook's spread table:
+
+| Measure | Seed 42 | Seed 7 | Seed 2024 | Spread |
+|---|---|---|---|---|
+| Overall accuracy | 0.522 | 0.565 | 0.609 | 0.087 |
+| Macro F1 | 0.488 | 0.535 | 0.578 | 0.090 |
+| F1 — `analysis` | 0.500 | 0.381 | 0.688 | 0.307 |
+| F1 — `take` | 0.333 | 0.571 | 0.364 | 0.238 |
+| F1 — `reaction` | 0.632 | 0.651 | 0.684 | 0.053 |
+
+Accuracy moved 0.087 across seeds, which is under the notebook's 10-point
+warning line. The per-label F1s for `analysis` and `take` moved by 0.24–0.31,
+which is what about 15 test posts per label does. For criterion 3, I ran the
+baseline on each seed's own test split (rebuilt with the notebook's
+`split_dataset`). The seed-42 split is identical to the committed
+`test_split.csv`.
 
 ### Confusion matrix
 
 <!-- ⚠️ TYPED AS A MARKDOWN TABLE. The notebook prints one ready to paste.
      An image of a matrix earns nothing. -->
 
-| true \ predicted |  |  |  |
+Seed 42, as the notebook prints it (46 test posts):
+
+| true \ predicted | analysis | take | reaction |
 |---|---|---|---|
-| **** |  |  |  |
-| **** |  |  |  |
-| **** |  |  |  |
+| **analysis** | 9 | 1 | 5 |
+| **take** | 7 | 3 | 4 |
+| **reaction** | 5 | 0 | 12 |
+
+All three seeds added together (138 test predictions). One seed's matrix has
+cells of 0–7, so the sum gives a steadier picture:
+
+| true \ predicted | analysis | take | reaction |
+|---|---|---|---|
+| **analysis** | 24 | 7 | 13 |
+| **take** | 12 | 15 | 16 |
+| **reaction** | 9 | 3 | 39 |
 
 **My biggest off-diagonal number, and what it means:**
-<!-- Not "the model made mistakes" — WHICH boundary it didn't learn, and which
-     direction. "7 real analysis posts were called hot_take and only 3 went the
-     other way" is a direction, not just an error rate. -->
+
+On seed 42, **7 real `take` posts were called `analysis` and only 1 went the
+other way.** The model treats "sounds like an argument about football" as
+`analysis`. It hasn't learned my real rule, that the post needs a checkable
+detail that *supports* the point. That's the hardest boundary from Unit 5,
+and the model fails it in the direction you'd expect: confident, specific
+language gets read as evidence.
+
+Across all three seeds, the biggest off-diagonal cell is a different one:
+**16 `take` → `reaction`**, then 13 `analysis` → `reaction`. `take` is the
+label the model recognises least (15 of 43, 35% recall). Its errors split
+between the other two labels rather than going one way, while `reaction`
+pulls in errors from both. That's what a model does when it has learned the
+easy feature (short and informal → `reaction`) and not much else.
 
 
 
@@ -491,22 +533,52 @@ boundary my taxonomy is built around, and the model hasn't learned it yet.
 
 | # | Criterion | Target | Verdict | How I decided |
 |---|---|---|---|---|
-| 1 |  |  |  |  |
-| 2 |  |  |  |  |
-| 3 |  |  |  |  |
-| 4 |  |  |  |  |
-| 5 |  |  |  |  |
+| 1 | Overall accuracy | ≥ 0.60 on every seed | **MISSED** | 0.522 and 0.565 are below it. Only seed 2024 (0.609) clears it |
+| 2 | Every label's F1 | ≥ 0.50 on every seed | **MISSED** | Some label falls below on every seed: `take` 0.333, `analysis` 0.381, `take` 0.364 |
+| 3 | Gain over the zero-shot baseline | ≥ +0.15 on every seed | **MET** | +0.174, +0.217, +0.239, each against the baseline on the same split |
+| 4 | Label balance | every label 25–40% | **MET** | 113 / 95 / 95 of 303 = 37 / 31 / 31% |
+| 5 | Confident third beats unsure third | ≥ +0.15 on every seed | **MET** | +0.47, +0.47, +0.53. This one is less impressive than it looks (see diagnosis 3) |
 
 **Diagnoses**
 
-<!-- For each miss: the cause, and how you know. The four common causes are:
-     too few examples for a label, a boundary you applied inconsistently, a
-     genuinely hard label pair, and a task the model can't reach from this
-     much data.
+**1. Criteria 1 and 2 were missed mainly because the model is underfit, not
+because it was trained on too few posts.** The evidence:
 
-     ⚠️ Use your agreement report as evidence. It is the only instrument you
-     have that can tell a LABELLING problem from a MODEL problem, and this
-     section is graded on whether you used it that way. -->
+- Training loss ended at 0.97–1.02 on every seed. A model that always guesses
+  uniformly over three labels scores ln 3 ≈ 1.10, so three epochs barely moved
+  it.
+- Validation accuracy was still rising at epoch 3 on seeds 42 and 7.
+- The model's average confidence in its own top guess was 0.38–0.41, barely
+  above the 0.33 of a coin with three sides.
+- 211 training posts × 3 epochs ÷ batch 16 is only 42 optimiser steps at lr
+  2e-5.
+
+This is a model that hasn't finished learning, not one that has hit the limit
+of the data. It's the cause I can test most cheaply, so it's the one The
+Improvement targets.
+
+**2. Criterion 2 (`take` and `analysis`) also sits on a genuinely hard
+boundary. I can't yet rule out that I applied it inconsistently.** The
+summed matrix shows `take` with the worst recall (35%). `take` ↔ `analysis`
+confusions run 12 / 7 in total, 7 / 1 on seed 42.
+
+This is where the agreement report should separate a labelling problem from
+a model problem. A disagreement with staff on their `analysis` / `hot_take`
+rule, combined with the same confusion in the matrix, would point at my
+labels. But I don't have `data/staff_labels.csv` from the TF yet (see the
+Agreement Report), so that test hasn't run.
+
+The only consistency evidence I have is weak. On review, I changed 3 of my
+own 283 pre-labels, and 2 of the 3 were the `analysis` boundary. But the same
+model labelling and then reviewing isn't independent. So "the boundary is
+hard" is supported by the matrix. "I applied it inconsistently" is
+**untested**, not ruled out.
+
+**3. Criterion 5 is met, but on a weak model.** The confident third is right
+80–87% of the time and the unsure third 33%. But "confident" here means about
+0.45 versus about 0.35 softmax, so the ordering carries information while the
+values themselves mean little. I wouldn't send posts to a human using a fixed
+confidence cut-off from this model.
 
 
 
