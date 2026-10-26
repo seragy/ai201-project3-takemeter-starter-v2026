@@ -393,12 +393,22 @@ No human labels are in this repository.
 <!-- Both models on the same posts. `python baseline.py --trained results.json`
      prints this table for you. -->
 
+Both models on the same 46 posts in `test_split.csv` (seed 42). The baseline
+is `facebook/bart-large-mnli` zero-shot, with my definitions from
+`label_definitions.txt` as the prompt.
+
 | Measure | Baseline | Trained | Difference |
 |---|---|---|---|
-| Overall accuracy |  |  |  |
-| Macro F1 |  |  |  |
-| F1 — `label_one` |  |  |  |
-| F1 — `label_two` |  |  |  |
+| Overall accuracy | 0.348 | 0.522 | +0.174 |
+| Macro F1 | 0.244 | 0.488 | +0.245 |
+| F1 — `analysis` | 0.500 | 0.500 | -0.000 |
+| F1 — `reaction` | 0.231 | 0.632 | +0.401 |
+| F1 — `take` | 0.000 | 0.333 | +0.333 |
+
+I also ran the baseline once with **bare label names** (no definitions) to
+see what the definitions are worth. That run also scored **0.348** accuracy,
+with macro F1 0.263. It isn't the reported baseline, and its JSON isn't
+committed.
 
 **What I predicted before I looked:**
 
@@ -416,8 +426,26 @@ yes or no to everything else more or less at random. So I expect the fine-tuned 
 about 0.10–0.15.
 
 **What the gap actually means:**
-<!-- If the baseline matched your trained model, your fine-tuning added
-     nothing — and that is a real finding, not a failure. Say it plainly. -->
+
+The prediction was half right. The overall gap (+0.17) landed just above the
+0.10–0.15 I guessed. But I had `reaction` backwards: I expected it to be the
+baseline's best label, and it was close to its worst. Looking at its
+predictions explains why. **With my definitions, the baseline called 37 of 46
+posts `analysis`.** That includes 14 of the 17 `reaction` posts. With bare
+names, it called 36 of 46 posts `take`. Either way, the zero-shot model
+mostly predicted one label. Its `analysis` F1 of 0.500 is mostly an artefact
+of predicting `analysis` for nearly everything. Its accuracy (0.348) is
+*below* always guessing `reaction` (17/46 = 0.370).
+
+The definitions changed *which* label it collapsed onto, but not how accurate
+it was (0.348 both times). For a general entailment model, a sentence like
+"rests on a specific, checkable detail" isn't something it can test a post
+against.
+
+So fine-tuning added real value, nearly all of it on `reaction` and `take`.
+Learning `reaction` from 79 training examples was the biggest win (+0.40 F1).
+On `analysis`, the fine-tuned model is no better than the baseline. That's the
+boundary my taxonomy is built around, and the model hasn't learned it yet.
 
 
 
