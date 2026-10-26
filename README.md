@@ -547,7 +547,8 @@ because it was trained on too few posts.** The evidence:
 - Training loss ended at 0.97–1.02 on every seed. A model that always guesses
   uniformly over three labels scores ln 3 ≈ 1.10, so three epochs barely moved
   it.
-- Validation accuracy was still rising at epoch 3 on seeds 42 and 7.
+- Validation loss was still falling at epoch 3 on all three seeds
+  (seed 42: 1.072 → 1.039 → 1.023).
 - The model's average confidence in its own top guess was 0.38–0.41, barely
   above the 0.33 of a coin with three sides.
 - 211 training posts × 3 epochs ÷ batch 16 is only 42 optimiser steps at lr
@@ -592,72 +593,112 @@ confidence cut-off from this model.
      data/staff_taxonomy.md, not your own — so every argument below is made
      from those definitions and those decision rules. -->
 
-**Agreement rate:** ___ / 30 = ___%
+**Agreement rate: not yet measured.** It needs `data/staff_labels.csv`, which
+the TF provides only after the staff set has been labelled. That file isn't in
+this repo yet, so `python agreement.py` can't run, and there are no
+disagreements to adjudicate.
 
-<!-- Nobody grades this number. A 60% who argues every disagreement from the
-     stated rules beats a 95% who wrote "staff was right" nine times. Several
-     of the 30 were chosen because they're genuinely ambiguous — you should be
-     winning some of these. -->
+What is done:
 
-**Disagreements**
+- **`my_staff_labels.csv` is committed:** all 30 posts, text copied exactly
+  from `data/staff_posts.csv`, labelled by Claude under the **staff**
+  taxonomy in `data/staff_taxonomy.md`, not under TakeMeter's own.
+- **The calls I expect staff to contest**, with my reasoning recorded *before*
+  seeing their labels:
+  - **sp_005, sp_007, sp_010 → `analysis`.** Each argues from the writer's own
+    measurements: two years of times at 35 vs 50 miles a week, the same loop
+    at 4C vs 24C, three runners within 10 seconds. The staff rule asks
+    whether the fact is *load-bearing*, not whether a stranger could look it
+    up. In all three, the numbers are the whole argument. The case for
+    `hot_take` is that one runner's data is anecdote. Rule 1 doesn't say
+    anecdotes are excluded.
+  - **sp_014 → `hot_take`.** This is almost word for word the staff's own
+    example of a number used as decoration: "times are down 3%… so obviously
+    the shoes are the whole story".
+  - **sp_019 and sp_020 → `hot_take`.** Both are about the writer's world
+    ("nobody actually enjoys the long run", "every injury thread"), but they
+    make general claims. Rule 2 says heated or personal-sounding general
+    claims are still `hot_take`.
+  - **sp_025, sp_027, sp_029 → `reaction`.** Each contains a concrete detail
+    (blowing up at 20, a 20-degree lean, the wrong shoe size), but none argues
+    anything. They report what just happened to the writer.
 
-<!-- Three lines each: the post, both labels, and who you think is right and
-     why — grounded in the staff definitions you were both applying.
+**Disagreements:** to be filled in once the staff labels arrive. Each one goes
+in the three-line format with a pile (a), (b) or (c).
 
-     Then sort each into one of three piles:
-       (a) the rule covered it and I applied it loosely → a consistency problem
-       (b) the rule genuinely doesn't say               → a gap in the definitions
-       (c) the rule is ambiguous here and my reading is defensible → argue it.
-           This is a legitimate win.
-
-     Pile (a) is the one that matters most for your diagnosis: if you applied a
-     written rule two different ways on 30 posts, that is direct evidence about
-     what you did across your own 200. -->
-
-**1.**
-> *The post:*
->
-> *Staff said / I said:*
->
-> *My call, and why:*
->
-> *Which pile:*
-
-**2.**
-> *The post:*
->
-> *Staff said / I said:*
->
-> *My call, and why:*
->
-> *Which pile:*
-
-**What the pattern in my disagreements tells me:**
-
-
+**What the pattern in my disagreements tells me:** not yet known. This is the
+test diagnosis 2 is waiting on. If staff and I disagree on `analysis` vs
+`hot_take`, and my matrix confuses `take` and `analysis`, that points at my
+labels rather than the model.
 
 ---
 
 ## The Improvement
 
-**What I changed:**
+**What I changed:** `EPOCHS` from 3 to 10 in section 2 of the notebook. That's
+140 optimiser steps instead of 42. Nothing else changed: same labels, lr,
+batch size, max length and seeds. The "after" runs were written with
+`RUN_LABEL = "after"`.
 
-**Which diagnosis pointed at it:**
+**Which diagnosis pointed at it:** Diagnosis 1. Training loss ended near the
+uniform-guess level (0.97–1.02 against ln 3 ≈ 1.10), validation loss was
+still falling at epoch 3 on every seed, and mean confidence was about 0.40.
+The model hadn't finished learning. I tested underfitting first because it
+was the cheapest cause to test, and the only one I could test before the
+staff labels arrive. Relabelling the `take`/`analysis` boundary would be the
+next fix, but without the agreement report I'd be changing labels on a guess.
 
 ### Run Log — After
 
+10 epochs, everything else unchanged. `results_three_seeds_after.json`.
+
 | Criterion | Target | Seed 42 | Seed 7 | Seed 2024 | Verdict |
 |---|---|---|---|---|---|
-| 1.  |  |  |  |  |  |
-| 2.  |  |  |  |  |  |
-| 3.  |  |  |  |  |  |
-| 4.  |  |  |  |  |  |
-| 5.  |  |  |  |  |  |
+| 1. Overall accuracy | ≥ 0.60 every seed | 0.696 | 0.565 | 0.739 | **MISSED** (seed 7) |
+| 2. Lowest per-label F1 | ≥ 0.50 every seed | 0.667 (`analysis`) | 0.385 (`analysis`) | 0.690 (`take`) | **MISSED** (seed 7) |
+| 3. Gain over the zero-shot baseline | ≥ +0.15 every seed | +0.348 | +0.217 | +0.369 | **MET** |
+| 4. Label shares | every label 25–40% | 37 / 31 / 31% | same file | same file | **MET** (unchanged) |
+| 5. Most-confident third minus least-confident third | ≥ +0.15 every seed | +0.333 (0.800 vs 0.467) | +0.400 (0.800 vs 0.400) | +0.133 (0.800 vs 0.667) | **MISSED** (seed 2024) |
+
+| Measure | Seed 42 | Seed 7 | Seed 2024 | Spread |
+|---|---|---|---|---|
+| Overall accuracy | 0.696 | 0.565 | 0.739 | 0.174 |
+| Macro F1 | 0.699 | 0.548 | 0.738 | 0.190 |
+| F1 — `analysis` | 0.667 | 0.385 | 0.759 | 0.374 |
+| F1 — `take` | 0.741 | 0.593 | 0.690 | 0.148 |
+| F1 — `reaction` | 0.690 | 0.667 | 0.765 | 0.098 |
+
+Confusion matrix, all three seeds added together (before → after on the
+diagonal: `analysis` 24 → 28, `take` 15 → 28, `reaction` 39 → 36):
+
+| true \ predicted | analysis | take | reaction |
+|---|---|---|---|
+| **analysis** | 28 | 8 | 8 |
+| **take** | 8 | 28 | 7 |
+| **reaction** | 11 | 4 | 36 |
 
 **Did it help, and how do I know:**
 
-<!-- If it didn't, say so. Relabelling that didn't help is a genuinely
-     interesting result and earns full credit. -->
+Yes on two seeds, and no on the third.
+
+- **Seeds 42 and 2024 improved:** accuracy +0.174 and +0.130, macro F1 +0.21
+  and +0.16. They now clear criteria 1 and 2 comfortably.
+- **`take` was the biggest winner:** summed recall went from 15/43 to 28/43,
+  and the seed-42 `take` → `analysis` leak fell from 7 to 3. So part of what
+  looked like a hard boundary in diagnosis 2 was underfitting.
+- **Seed 7 didn't move:** accuracy was 0.565 both times, and its `analysis`
+  F1 is still 0.385.
+
+No verdict changed from MISSED to MET, because each target has to hold on all
+three seeds. And the spread across seeds doubled, from 0.087 to 0.174, which
+is past the notebook's 10-point warning line.
+
+Criterion 5 went from MET to MISSED. The model is now more confident overall
+(mean 0.71–0.75 when right), but on seed 2024 its unsure third is right 67%
+of the time, so the gap between the thirds narrowed to 0.133. The criterion
+measures a *gap*, so a better model scored worse on it. That says the
+criterion is fragile. I've left it as written rather than revising it after
+a miss.
 
 
 
@@ -665,13 +706,48 @@ confidence cut-off from this model.
 
 ## What's Still Broken
 
-<!-- For each criterion still missed: what you'd do, and why you stopped. -->
+**Criteria 1 and 2 still miss, because of seed 7's `analysis` posts.** On that
+split, 6 of 14 `analysis` posts were called `reaction`. Reading the 14 shows
+why: several *open* like reactions before getting to their checkable detail.
+
+- "Congrats to Napoli! Also this makes 4 seasons in a row…"
+- "You kidding me? You never noticed? Dude's chomping on his nails…"
+- "The usual Michael Owen bullshit…"
+- Hard case 4 (Italy and the "vibes"), which I'd already called `analysis`
+  only narrowly.
+
+My rule says to ask "is it mainly a joke or feeling?" first, and a model
+reading the opening sentence answers yes. **What I'd do next:** once the staff
+labels arrive, run the agreement check. If I disagree with staff on their
+`reaction`/`analysis` rule (their rule 3, "recency does not outrank
+evidence"), relabel or tighten that boundary across `labels.csv` and re-run.
+If I agree with staff, the labels are consistent, and the fix is more
+`analysis` examples that open informally. **Why I stopped:** the unit allows
+one improvement, and relabelling without the agreement evidence would be
+guessing.
+
+**Criterion 5 now misses on seed 2024.** I'd check it against
+`mean_when_right` vs `mean_when_wrong` (0.71 vs 0.65 on that seed), not just
+the thirds. Over three seeds, the thirds are about 15 posts each, and one
+seed is too small a sample to tell a calibration problem from noise. I
+stopped there because the criterion has to stand as written.
+
+**The measure itself is unstable.** A 0.174 accuracy spread across seeds
+means 46 test posts can't separate a 0.60 model from a 0.70 one. More data,
+or cross-validation instead of three single splits, would come before any
+further tuning.
 
 
 
 **The gap between what I meant my labels to capture and what the model
 learned:**
-<!-- Two sentences. Your confusion matrix is the evidence. -->
+
+I meant `analysis` to mean "a point supported by a checkable detail",
+wherever in the post that detail sits. The model mostly learned "sounds
+argumentative from the first line". So `analysis` posts that open with a
+joke or a cheer go to `reaction` (11 summed `reaction` ↔ `analysis` errors
+after the fix, 8 the other way), while the `take`/`analysis` boundary that
+worried me most turned out to be largely learnable with enough training.
 
 
 
