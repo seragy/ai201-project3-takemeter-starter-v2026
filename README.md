@@ -743,11 +743,12 @@ further tuning.
 learned:**
 
 I meant `analysis` to mean "a point supported by a checkable detail",
-wherever in the post that detail sits. The model mostly learned "sounds
-argumentative from the first line". So `analysis` posts that open with a
-joke or a cheer go to `reaction` (11 summed `reaction` ↔ `analysis` errors
-after the fix, 8 the other way), while the `take`/`analysis` boundary that
-worried me most turned out to be largely learnable with enough training.
+wherever in the post that detail sits. The model mostly learned *register*:
+argumentative openings mean `analysis`, informal openings mean `reaction`.
+So the `reaction`/`analysis` boundary now leaks most, in both directions (11
+summed `reaction` → `analysis` errors and 8 `analysis` → `reaction` after the
+fix), while the `take`/`analysis` boundary that worried me most turned out to
+be largely learnable with enough training.
 
 
 
