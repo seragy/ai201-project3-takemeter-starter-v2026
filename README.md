@@ -401,8 +401,19 @@ No human labels are in this repository.
 | F1 — `label_two` |  |  |  |
 
 **What I predicted before I looked:**
-<!-- Milestone 1 asks you to write this BEFORE seeing the trained numbers. A
-     prediction made afterwards isn't one. -->
+
+Written before running `baseline.py`. One caveat: the trained model's seed-42
+numbers (accuracy 0.522) were already printed in Unit 5, so only the baseline
+half of this is a real prediction.
+
+I expect the zero-shot baseline (`bart-large-mnli`, given my three definitions)
+to score about **0.40 accuracy**, barely above the 0.37 majority-class rate.
+It should do best on `reaction`, where the posts look different on the
+surface (short, exclamation marks, "lol"), and close to zero on the `take` vs
+`analysis` split. An entailment model asked "does this make a point resting
+on a checkable detail?" will say yes to anything with a number in it, and say
+yes or no to everything else more or less at random. So I expect the fine-tuned model to win by
+about 0.10–0.15.
 
 **What the gap actually means:**
 <!-- If the baseline matched your trained model, your fine-tuning added
